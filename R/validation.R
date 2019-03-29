@@ -154,6 +154,55 @@ is_binary <- function(x) {
 
 # ------------------------------------------------------------------------------
 
+# Use separate functions so we can have good error messaging from `vec_assert()`
+# labelling the input
+
+# TODO - Waiting on https://github.com/r-lib/vctrs/issues/261
+# so this works
+# species <- iris[, "Species", drop = FALSE]
+# validate_columns_have_type(species, factor())
+
+#' Ensure that columns all have the same type
+#'
+#' `validate_columns_have_type()` allows you to supply a `ptype` that all
+#' columns should match, otherwise an error
+#' is thrown. It is useful for checking that the user supplied all
+#' numeric predictors, or all factor outcomes.
+#'
+#' @param data A tibble to check the columns of.
+#'
+#' @param ptype The type that each column of `outcomes` or `predictors` should
+#' have. Common types are `numeric()` and `factor()`.
+#'
+#' @param arg A string. Used in error messaging output.
+#'
+#' @examples
+#'
+#' # All good
+#' validate_columns_have_type(mtcars, numeric(), "predictors")
+#'
+#'
+#' # species <- iris[, "Species", drop = FALSE]
+#' # validate_columns_have_type(species, factor())
+#'
+validate_columns_have_type <- function(data, ptype, arg = "outcomes") {
+  data <- check_is_data_like(data, arg)
+  df_ptype <- make_ptype_scaffold(data, ptype)
+  vctrs::vec_assert(data, df_ptype, arg = arg)
+}
+
+make_ptype_scaffold <- function(data, ptype) {
+  n_col <- ncol(data)
+  col_names <- colnames(data)
+
+  ptypes <- rlang::rep_along(seq_len(n_col), list(ptype))
+  names(ptypes) <- col_names
+
+  tibble::tibble(!!!ptypes)
+}
+
+# ------------------------------------------------------------------------------
+
 #' Ensure predictors are all numeric
 #'
 #' @description
